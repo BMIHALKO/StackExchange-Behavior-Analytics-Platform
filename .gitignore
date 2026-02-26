@@ -1,0 +1,43 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*.pkl
+
+# Logs
+*.log
+logs/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Data folders (BIG IMPORTANT)
+data/raw/
+data/processed/
+data/rejects/
+data/logs/
+data/reports/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Build / dist
+build/
+dist/
+*.egg-info/
