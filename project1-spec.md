@@ -13,13 +13,9 @@ This project integrates concepts from Weeks 1–4 of the Data Engineering curric
 A behavioral analytics company wants to:
 
 1. **Stream** real-time human behavioral events (mobile app usage, social interactions, wearable signals).
-
 2. **Consume** and persist raw event data in a partitioned data lake.
-
 3. **Process** raw events to compute hourly engagement metrics, behavioral segmentation summaries, and anomaly indicators.
-
 4. **Transform** and aggregate behavioral data into analytics-ready datasets using both RDD and Spark SQL approaches.
-
 5. **Orchestrate** streaming and batch jobs on a daily schedule with retries and validation using Apache Airflow.
 
 ---
