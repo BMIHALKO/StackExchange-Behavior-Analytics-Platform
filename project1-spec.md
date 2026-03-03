@@ -2,18 +2,25 @@
 
 ## Overview
 
-Build an end-to-end data engineering pipeline that ingests real-time e-commerce order events via Kafka, processes them with PySpark, and orchestrates the entire workflow using Apache Airflow. This project ties together all concepts from **Weeks 1–4** of the Data Engineering curriculum.
+Build an end-to-end data engineering pipeline that ingests real-time human behavioral events via Kafka, processes them using PySpark (Structured Streaming and batch ETL), and orchestrates the full workflow using Apache Airflow.
+
+This project integrates concepts from Weeks 1–4 of the Data Engineering curriculum, including Kafka ingestion, Spark streaming, RDD processing, Spark SQL transformations, and DAG-based orchestration.
 
 ---
 
 ## Business Scenario
 
-An e-commerce company wants to:
+A behavioral analytics company wants to:
 
-1. **Stream** order events (new orders, cancellations, returns) in real time.
-2. **Process** the raw events to compute hourly sales aggregations, top-selling products, and regional revenue breakdowns.
-3. **Persist** both raw and transformed data to storage (local filesystem or S3).
-4. **Orchestrate** the batch and streaming jobs on a daily schedule with retry and alerting.
+Stream real-time human behavioral events (mobile app usage, social interactions, wearable signals).
+
+Consume and persist raw event data in a partitioned data lake.
+
+Process raw events to compute hourly engagement metrics, behavioral segmentation summaries, and anomaly indicators.
+
+Transform and aggregate behavioral data into analytics-ready datasets using both RDD and Spark SQL approaches.
+
+Orchestrate streaming and batch jobs on a daily schedule with retries and validation using Apache Airflow.
 
 ---
 
