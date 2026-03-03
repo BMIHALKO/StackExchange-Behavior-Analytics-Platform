@@ -72,30 +72,48 @@ A behavioral analytics company wants to:
 
 ## Detailed Requirements
 
-### Module 1 — Kafka Producer (Week 3)
+## Module 1 — Kafka Producer (Week 3)
 
-**Goal:** Simulate a stream of order events.
-
-- Create a Kafka topic named `ecommerce_orders`.
-- Write a Python Kafka producer (`producer.py`) that generates JSON order events:
-  ```json
-  {
-    "order_id": "ORD-10042",
-    "customer_id": "CUST-301",
-    "product_id": "PROD-88",
-    "product_name": "Wireless Mouse",
-    "category": "Electronics",
-    "quantity": 2,
-    "unit_price": 29.99,
-    "order_status": "NEW",
-    "region": "US-East",
-    "timestamp": "2026-02-19T10:32:00Z"
-  }
-  ```
-- Use `order_status` values: `NEW`, `CANCELLED`, `RETURNED`.
-- Produce at least **500 events** with randomized data using the `Faker` library.
+### Goal
+Simulate a stream of **StackExchange behavior events** using real API data.
 
 ---
+
+## Kafka Topic
+
+Create a Kafka topic named:
+
+ 
+---
+
+## Producer Requirements
+
+Write a Python Kafka producer (`producer.py`) that:
+
+- Pulls real data from the **StackExchange API**
+- Wraps each API object inside a standardized behavioral event schema
+- Streams at least **500 events** into Kafka
+- Does **NOT** use Faker (must rely on API data)
+
+---
+
+## Event Schema
+
+Each event must follow this JSON structure:
+
+```json
+{
+  "event_id": "UUID",
+  "event_type": "APP_USAGE | SOCIAL_INTERACTION | WEARABLE_SIGNAL",
+  "timestamp": "ISO-8601 UTC",
+  "user_id": "string",
+  "region": "string",
+  "source": "stackexchange_api",
+  "payload_version": 1,
+  "payload": {
+    "raw_api_object": { ... full API response object ... }
+  }
+}
 
 ### Module 2 — Spark Streaming Consumer (Week 3)
 
