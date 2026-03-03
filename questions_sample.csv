@@ -1,21 +1,21 @@
 question_id,creation_date,title,score,answer_count,is_answered,link
-79897384,2026-02-26 21:19:41,How to return binary from AWS Lambda with Function URL,0,0,False,https://stackoverflow.com/questions/79897384/how-to-return-binary-from-aws-lambda-with-function-url
-79897380,2026-02-26 21:11:15,Bar chart legends in R,0,0,False,https://stackoverflow.com/questions/79897380/bar-chart-legends-in-r
-79897374,2026-02-26 20:52:28,Quick AI translation,0,0,False,https://stackoverflow.com/questions/79897374/quick-ai-translation
-79897369,2026-02-26 20:33:28,Getting the wireless network list with Android Studio,-1,0,False,https://stackoverflow.com/questions/79897369/getting-the-wireless-network-list-with-android-studio
-79897361,2026-02-26 20:18:17,Assignment operator causes instantiation of constructor template,1,0,False,https://stackoverflow.com/questions/79897361/assignment-operator-causes-instantiation-of-constructor-template
-79897359,2026-02-26 20:16:11,fetching from an API in react,0,2,False,https://stackoverflow.com/questions/79897359/fetching-from-an-api-in-react
-79897354,2026-02-26 20:02:49,How to call a function in a .pyd library on exiting Python?,0,0,False,https://stackoverflow.com/questions/79897354/how-to-call-a-function-in-a-pyd-library-on-exiting-python
-79897345,2026-02-26 19:36:42,App windows of apps launched from emacs not getting their own icon in ubuntu dock,-2,0,False,https://stackoverflow.com/questions/79897345/app-windows-of-apps-launched-from-emacs-not-getting-their-own-icon-in-ubuntu-doc
-79897344,2026-02-26 19:36:02,FirebaseAnalytic revenue,-1,1,True,https://stackoverflow.com/questions/79897344/firebaseanalytic-revenue
-79897343,2026-02-26 19:33:08,"I&#39;m starting to learn java. What is the actual way of saving information of my classes, when i only run the program in the Eclipse IDE?",0,4,True,https://stackoverflow.com/questions/79897343/im-starting-to-learn-java-what-is-the-actual-way-of-saving-information-of-my-c
-79897341,2026-02-26 19:26:09,How do I query in Fluent (in Vapor) for items with a nil value for an OptionalParent relation?,0,1,True,https://stackoverflow.com/questions/79897341/how-do-i-query-in-fluent-in-vapor-for-items-with-a-nil-value-for-an-optionalpa
-79897340,2026-02-26 19:26:00,Analyzing isotopic niche overlap using R package SIBER,0,0,False,https://stackoverflow.com/questions/79897340/analyzing-isotopic-niche-overlap-using-r-package-siber
-79897328,2026-02-26 18:57:33,ReactReader CFI not restoring correct page – always opens chapter title page (persist + search issue),-3,0,False,https://stackoverflow.com/questions/79897328/reactreader-cfi-not-restoring-correct-page-always-opens-chapter-title-page-pe
-79897325,2026-02-26 18:45:56,Docker GitLab image - private project accessible by all?,-4,0,False,https://stackoverflow.com/questions/79897325/docker-gitlab-image-private-project-accessible-by-all
-79897322,2026-02-26 18:36:39,Linux Kernal 2.6.3x build errors,-5,0,False,https://stackoverflow.com/questions/79897322/linux-kernal-2-6-3x-build-errors
-79897320,2026-02-26 18:35:13,Modify both inner and outer part of a nested structure in a loop,1,1,True,https://stackoverflow.com/questions/79897320/modify-both-inner-and-outer-part-of-a-nested-structure-in-a-loop
-79897314,2026-02-26 18:26:07,How to read in local file in react,-1,1,True,https://stackoverflow.com/questions/79897314/how-to-read-in-local-file-in-react
-79897306,2026-02-26 18:13:23,What are best practices for using AI tools in production without over-relying on them?,1,0,False,https://stackoverflow.com/questions/79897306/what-are-best-practices-for-using-ai-tools-in-production-without-over-relying-on
-79897301,2026-02-26 18:06:51,How can I add multiple values in a single model in SleekCMS?,1,1,True,https://stackoverflow.com/questions/79897301/how-can-i-add-multiple-values-in-a-single-model-in-sleekcms
-79897294,2026-02-26 17:47:53,Has anyone made Linux Multi-touch HID USB Gadget work with a Windows host?,0,0,False,https://stackoverflow.com/questions/79897294/has-anyone-made-linux-multi-touch-hid-usb-gadget-work-with-a-windows-host
+79900264,2026-03-03 16:12:47,Modify pdf text objects on linux,1,0,False,https://stackoverflow.com/questions/79900264/modify-pdf-text-objects-on-linux
+79900254,2026-03-03 16:01:09,Can&#39;t pass GitLab user-defined variable through Docker image with --build-arg,0,0,False,https://stackoverflow.com/questions/79900254/cant-pass-gitlab-user-defined-variable-through-docker-image-with-build-arg
+79900253,2026-03-03 16:00:35,Heroku ruby buildpack breaks on second deployment push,1,0,False,https://stackoverflow.com/questions/79900253/heroku-ruby-buildpack-breaks-on-second-deployment-push
+79900252,2026-03-03 15:57:41,EAS Build uploads entire project instead of just mobile folder despite .easignore,0,0,False,https://stackoverflow.com/questions/79900252/eas-build-uploads-entire-project-instead-of-just-mobile-folder-despite-easignor
+79900251,2026-03-03 15:57:35,Ways to implement sniffy for junit 6,0,1,False,https://stackoverflow.com/questions/79900251/ways-to-implement-sniffy-for-junit-6
+79900249,2026-03-03 15:55:35,Recommended folder structure for managing multiple client React projects with shared components?,0,1,False,https://stackoverflow.com/questions/79900249/recommended-folder-structure-for-managing-multiple-client-react-projects-with-sh
+79900248,2026-03-03 15:55:28,Can I merge data into 2 different tables in one query with bigquery?,0,0,False,https://stackoverflow.com/questions/79900248/can-i-merge-data-into-2-different-tables-in-one-query-with-bigquery
+79900245,2026-03-03 15:50:07,Vuforia Engine (Unity Windows Standalone): Systematic Tilt/Pitch Error on tracked Image Target,0,0,False,https://stackoverflow.com/questions/79900245/vuforia-engine-unity-windows-standalone-systematic-tilt-pitch-error-on-tracke
+79900234,2026-03-03 15:22:43,Why does `\\&quot;` inside a string still result in `\&quot;` after parsing?,-2,1,False,https://stackoverflow.com/questions/79900234/why-does-inside-a-string-still-result-in-after-parsing
+79900233,2026-03-03 15:22:34,Submit ads button,0,1,True,https://stackoverflow.com/questions/79900233/submit-ads-button
+79900228,2026-03-03 15:19:35,Sql database adding to c#,0,3,True,https://stackoverflow.com/questions/79900228/sql-database-adding-to-c
+79900226,2026-03-03 15:16:44,Getting &quot;invalid value&quot; when trying to translate validation error messages in Express,0,0,False,https://stackoverflow.com/questions/79900226/getting-invalid-value-when-trying-to-translate-validation-error-messages-in-ex
+79900222,2026-03-03 15:08:39,NestJS integration test fails: Connection refused to MongoDB container with Atlas Search,-1,0,False,https://stackoverflow.com/questions/79900222/nestjs-integration-test-fails-connection-refused-to-mongodb-container-with-atla
+79900219,2026-03-03 15:04:43,Nuxt useFetch does not refetch on URL parameter change,0,1,False,https://stackoverflow.com/questions/79900219/nuxt-usefetch-does-not-refetch-on-url-parameter-change
+79900218,2026-03-03 15:03:25,Carrier in Cyber Security?,1,1,False,https://stackoverflow.com/questions/79900218/carrier-in-cyber-security
+79900217,2026-03-03 15:02:45,Apache configuration / No localhost:8080 access on Docker,0,0,False,https://stackoverflow.com/questions/79900217/apache-configuration-no-localhost8080-access-on-docker
+79900214,2026-03-03 14:55:34,The bottom_spacer is a full-height ghost screen and scrollLock uses the wrong condition and wrong axis,0,0,False,https://stackoverflow.com/questions/79900214/the-bottom-spacer-is-a-full-height-ghost-screen-and-scrolllock-uses-the-wrong-co
+79900213,2026-03-03 14:51:34,Smooth and smooths by nominal factor of same predictor in same GAM,0,1,False,https://stackoverflow.com/questions/79900213/smooth-and-smooths-by-nominal-factor-of-same-predictor-in-same-gam
+79900209,2026-03-03 14:46:18,pre-validate Azure AD credentials manually,-1,0,False,https://stackoverflow.com/questions/79900209/pre-validate-azure-ad-credentials-manually
+79900206,2026-03-03 14:37:49,Gitstream.cm file causing errors,0,0,False,https://stackoverflow.com/questions/79900206/gitstream-cm-file-causing-errors

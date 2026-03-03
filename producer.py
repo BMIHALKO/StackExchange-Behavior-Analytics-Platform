@@ -23,7 +23,7 @@ params = {
     "sort": "creation",
 }
 
-res = requests.get(url, params=params, timeout=30)
+res = requests.get(url, params = params, timeout = 30)
 res.raise_for_status()
 data = res.json()
 
