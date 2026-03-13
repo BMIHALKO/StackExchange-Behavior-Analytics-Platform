@@ -27,12 +27,18 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Data folders (BIG IMPORTANT)
+# Data folders
 data/raw/
 data/processed/
 data/rejects/
 data/logs/
 data/reports/
+
+# Spark streaming runtime folders
+data/checkpoints/
+data/landing/
+data/transformed/
+spark/data/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/

@@ -28,7 +28,7 @@ params = {
 }
 
 # Write into the spec folder location
-out_dir = Path(os.getenv("RAW_EVENTS_DIR", "data/raw"))
+out_dir = Path(os.getenv("LANDING_DIR", "data/landing"))
 run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 out_path = out_dir / f"date={run_date}" / "behavior_events_sample.ndjson"
 
@@ -87,7 +87,7 @@ def main() -> None:
 
         backoff = data.get("backoff")
         if backoff is not None:
-            time.sleeip(int(backoff))
+            time.sleep(int(backoff))
         
         # Stop early if there are no more pages
         if not data.get("has_more", False):
