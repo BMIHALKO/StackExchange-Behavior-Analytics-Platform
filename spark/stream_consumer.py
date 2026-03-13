@@ -5,23 +5,20 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import (
-    col, to_timestamp, to_date, coalesce, lit
-)
+from pyspark.sql.functions import col, from_json, to_timestamp, to_date, coalesce, lit
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, LongType, BooleanType
 )
 
-# The Config
 load_dotenv()
 
-landing_dir = os.getenv("LANDING_DIR", "data/landing")
+kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
 raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
 checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
-
-max_files_per_trigger = int(os.getenv("MAX_FILES_PER_TRIGGER", "1"))
 trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
 trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
+
 
 event_schema = StructType([
     StructField("event_id", StringType(), False),
@@ -42,20 +39,26 @@ event_schema = StructType([
     ]), True),
 ])
 
+
 def ensure_dir(path_str: str) -> None:
     Path(path_str).mkdir(parents = True, exist_ok = True)
+
 
 def build_spark(app_name: str = "StreamConsumer") -> SparkSession:
     spark = (
         SparkSession.builder
         .appName(app_name)
+        .config(
+            "spark.jars.packages",
+            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+        )
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
-
     return spark
 
-def transforms(df: DataFrame) -> DataFrame:
+
+def transform(df: DataFrame) -> DataFrame:
     out = df.withColumn(
         "event_time",
         to_timestamp(col("timestamp"), "yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -70,24 +73,30 @@ def transforms(df: DataFrame) -> DataFrame:
 
     return out
 
+
 def main() -> None:
-    ensure_dir(landing_dir)
     ensure_dir(raw_parquet_dir)
     ensure_dir(checkpoint_dir)
 
     spark = build_spark()
 
-    input_path = os.path.join(landing_dir, "date=*")
-
-    stream_df = (
+    kafka_df = (
         spark.readStream
-        .schema(event_schema)
-        .option("maxFilesPerTrigger", max_files_per_trigger)
-        .option("pathGlobFilter", "*.ndjson")
-        .json(input_path)
+        .format("kafka")
+        .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
+        .option("subscribe", kafka_topic)
+        .option("startingOffsets", "earliest")
+        .load()
     )
 
-    out_df = transforms(stream_df)
+    parsed_df = (
+        kafka_df
+        .selectExpr("CAST(value AS STRING)")
+        .select(from_json(col("value"), event_schema).alias("data"))
+        .select("data.*")
+    )
+
+    out_df = transform(parsed_df)
 
     writer = (
         out_df.writeStream
@@ -99,11 +108,12 @@ def main() -> None:
     )
 
     if trigger_once:
-        query = writer.trigger(once = True).start()
+        query = writer.trigger(once=True).start()
     else:
-        query = writer.trigger(processingTime = trigger_processing_time).start()
-    
+        query = writer.trigger(processingTime=trigger_processing_time).start()
+
     query.awaitTermination()
+
 
 if __name__ == "__main__":
     main()

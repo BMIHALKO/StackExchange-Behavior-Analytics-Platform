@@ -19,7 +19,6 @@ def build_spark():
     spark = (
         SparkSession.builder
         .appName("BatchDFETL")
-        .master("local[*]")
         .getOrCreate()
     )
 
