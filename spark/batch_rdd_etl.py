@@ -1,5 +1,7 @@
 # spark/batch_rdd_etl.py
 import os
+import shutil
+from pathlib import Path
 from pyspark.sql import SparkSession
 
 
@@ -56,6 +58,10 @@ def main():
     print("Top 20 question score totals:")
     for row in question_score_totals.take(20):
         print(row)
+    
+    output_path_obj = Path(OUTPUT_PATH)
+    if output_path_obj.exists():
+        shutil.rmtree(output_path_obj)
 
     question_score_totals.saveAsTextFile(OUTPUT_PATH)
 
