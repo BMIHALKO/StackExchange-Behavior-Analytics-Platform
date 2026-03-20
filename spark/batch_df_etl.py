@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -11,8 +13,9 @@ from pyspark.sql.functions import (
 from pyspark.sql.window import Window
 
 
-RAW_PATH = "data/raw"
-OUTPUT_PATH = "data/transformed"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+RAW_PATH = PROJECT_ROOT / "data" / "raw"
+OUTPUT_PATH = PROJECT_ROOT / "data" / "transformed"
 
 
 def build_spark():
@@ -32,7 +35,7 @@ def main():
 
     print("Reading raw parquet...")
 
-    df = spark.read.parquet(RAW_PATH)
+    df = spark.read.parquet(str(RAW_PATH))
 
     df = df.withColumn("event_date", to_date(col("event_time")))
 
@@ -50,7 +53,7 @@ def main():
     )
 
     events_by_type.write.mode("overwrite").parquet(
-        f"{OUTPUT_PATH}/events_by_type_daily"
+        str(OUTPUT_PATH / "events_by_type_daily")
     )
 
     # --------------------------------
@@ -72,7 +75,7 @@ def main():
     )
 
     top_questions.write.mode("overwrite").parquet(
-        f"{OUTPUT_PATH}/top_questions_daily"
+        str(OUTPUT_PATH / "top_questions_daily")
     )
 
     # --------------------------------
@@ -89,7 +92,7 @@ def main():
     )
 
     answered_rate.write.mode("overwrite").parquet(
-        f"{OUTPUT_PATH}/answered_rate_daily"
+        str(OUTPUT_PATH / "answered_rate_daily")
     )
 
     # --------------------------------
@@ -102,7 +105,7 @@ def main():
     )
 
     region_dist.write.mode("overwrite").parquet(
-        f"{OUTPUT_PATH}/region_distribution"
+        str(OUTPUT_PATH / "region_distribution")
     )
 
     print("Batch ETL finished successfully")

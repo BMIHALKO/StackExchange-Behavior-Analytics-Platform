@@ -18,6 +18,7 @@ raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
 checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
 trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
 trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
+stream_run_seconds = int(os.getenv("STREAM_RUN_SECONDS", "300"))
 
 
 event_schema = StructType([
@@ -108,11 +109,22 @@ def main() -> None:
     )
 
     if trigger_once:
+        print("Starting consumer in trigger-once mode...")
         query = writer.trigger(once=True).start()
+        query.awaitTermination()
     else:
-        query = writer.trigger(processingTime=trigger_processing_time).start()
+        print(
+            f"Starting consumer in processing-time mode every "
+            f"{trigger_processing_time} for up to {stream_run_seconds} seconds..."
+        )
+        query = writer.trigger(processingTime = trigger_processing_time).start()
+        query.awaitTermination(stream_run_seconds)
 
-    query.awaitTermination()
+        if query.isActive:
+            print("Stopping streaming query after timeout...")
+            query.stop()
+
+    spark.stop()
 
 
 if __name__ == "__main__":

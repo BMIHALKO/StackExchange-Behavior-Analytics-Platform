@@ -16,13 +16,17 @@ if not api_key:
 
 site = os.getenv("STACKEXCHANGE_SITE", "stackoverflow")
 pagesize = int(os.getenv("STACKEXCHANGE_PAGESIZE", "100"))
-max_pages = int(os.getenv("STACKEXCHANGE_MAX_PAGES", "5"))
+max_pages = int(os.getenv("STACKEXCHANGE_MAX_PAGES", "20"))
 
 kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
 
+run_forever = os.getenv("RUN_FOREVER", "false").lower() in ("1", "true", "yes")
+max_cycles = int(os.getenv("MAX_CYCLES", "1"))
+poll_interval_seconds = float(os.getenv("POLL_INTERVAL_SECONDS", "5"))
+
 url = "https://api.stackexchange.com/2.3/questions"
-params = {
+base_params = {
     "site": site,
     "key": api_key,
     "pagesize": pagesize,
@@ -45,7 +49,7 @@ def build_event(item: dict) -> dict:
 
     if user_id is None:
         user_id = f"anon-{item.get('question_id', 'unknown')}"
-
+    
     payload = {
         "question_id": item.get("question_id"),
         "creation_date": item.get("creation_date"),
@@ -67,6 +71,48 @@ def build_event(item: dict) -> dict:
         "payload": payload,
     }
 
+def publish_one_cycle(producer: KafkaProducer) -> tuple[int, dict | None]:
+    """
+    Publish one full cycle of API pulls.
+    A cycle = page 1 through max_pages (or until API says has_more is false)
+    """
+    total_events_sent = 0
+    last_response_data: dict | None = None
+
+    for page in range(1, max_pages + 1):
+        params_with_page = dict(base_params)
+        params_with_page["page"] = page
+
+        res = requests.get(url, params = params_with_page, timeout = 30)
+        res.raise_for_status()
+        data = res.json()
+        last_response_data = data
+
+        items = data.get("items", [])
+
+        for item in items:
+            event = build_event(item)
+            producer.send(
+                kafka_topic,
+                key = event["event_id"],
+                value = event,
+            )
+            total_events_sent += 1
+
+        # Push messages for this page
+        producer.flush()
+
+        backoff = data.get("backoff")
+        if backoff is not None:
+            print(f"API requested backoff: sleeping {int(backoff)} second(s)")
+            time.sleep(int(backoff))
+        
+        if not data.get("has_more", False):
+            break
+        
+        time.sleep(0.25)
+
+    return total_events_sent, last_response_data
 
 def main() -> None:
     producer = KafkaProducer(
@@ -75,51 +121,50 @@ def main() -> None:
         key_serializer = lambda k: k.encode("utf-8") if k is not None else None,
     )
 
-    total_events_sent = 0
-    last_response_data: dict | None = None
+    cycle_number = 1
+    grand_total = 0
 
     try:
-        for page in range(1, max_pages + 1):
-            params_with_page = dict(params)
-            params_with_page["page"] = page
+        while True:
+            print(f"\nStarting Producer Cycle {cycle_number}...")
 
-            res = requests.get(url, params = params_with_page, timeout = 30)
-            res.raise_for_status()
-            data = res.json()
-            last_response_data = data
+            total_events_sent, last_response_data = publish_one_cycle(producer)
+            grand_total += total_events_sent
 
-            items = data.get("items", [])
-
-            for item in items:
-                event = build_event(item)
-
-                # Use event_id as the Kafka message key
-                producer.send(
-                    kafka_topic,
-                    key = event["event_id"],
-                    value=event
+            if total_events_sent == 0:
+                print(f"Cycle {cycle_number}: no items returned from API")
+            else:
+                print(
+                    f"Cycle {cycle_number}: published {total_events_sent} events "
+                    f"to Kafka topic '{kafka_topic}'."
                 )
-                total_events_sent += 1
 
-            # Ensure messages are actually pushed for this page
-            producer.flush()
+            quota_remaining = (
+                None if last_response_data is None else last_response_data.get("quota_remaining")
+            )
+            print(f"Quota remaining: {quota_remaining}")
+            print(f"Grand total published so far: {grand_total}")
 
-            backoff = data.get("backoff")
-            if backoff is not None:
-                time.sleep(int(backoff))
-
-            if not data.get("has_more", False):
+            if not run_forever and cycle_number >= max_cycles:
+                print(f"Reached MAX_CYCLES = {max_cycles}. Exiting producer.")
                 break
+            
+            if run_forever:
+                print(
+                    f"RUN_FOREVER = true. Sleeping {poll_interval_seconds} second(s) "
+                    f"before next cycle..."
+                )
+            else:
+                print(
+                    f"Sleeping {poll_interval_seconds} second(s) before cycle "
+                    f"{cycle_number + 1} of {max_cycles}..."
+                )
 
-            time.sleep(0.25)
-
-        if total_events_sent == 0:
-            print("No items returned from API.")
-        else:
-            print(f"Published {total_events_sent} events to Kafka topic '{kafka_topic}'.")
-
-        quota_remaining = None if last_response_data is None else last_response_data.get("quota_remaining")
-        print(f"Quota remaining: {quota_remaining}")
+            time.sleep(poll_interval_seconds)
+            cycle_number += 1
+    
+    except KeyboardInterrupt:
+        print("\nProducer stopped manually.")
 
     finally:
         producer.flush()

@@ -1,10 +1,11 @@
 # spark/batch_rdd_etl.py
-
+import os
 from pyspark.sql import SparkSession
 
 
-RAW_PATH = "data/raw"
-OUTPUT_PATH = "data/transformed/question_score_totals_rdd"
+RAW_PATH = os.getenv("RAW_PARQUET_DIR", "data/raw")
+TRANSFORMED_DIR = os.getenv("TRANSFORMED_DIR", "data/transformed")
+OUTPUT_PATH = os.path.join(TRANSFORMED_DIR, "question_score_totals_rdd")
 
 
 def build_spark():
