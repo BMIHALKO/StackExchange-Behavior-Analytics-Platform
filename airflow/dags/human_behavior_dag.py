@@ -113,7 +113,7 @@ with DAG(
     description = "Airflow DAG for StackExchange behavior analytics pipeline",
     default_args = default_args,
     start_date = datetime(2025, 1, 1),
-    schedule = None,
+    schedule = "@daily",
     catchup = False,
     tags=["airflow", "spark"],
 ) as dag:
