@@ -11,26 +11,30 @@ kafka_topic = "stackexchange-events"
 
 def check_kafka_topic() -> None:
 
-    print("Hello man")
-    # try:
-    #     consumer = KafkaConsumer(
-    #         bootstrap_servers = "kafka:9092",
-    #         consumer_timeout_ms = 5000,
-    #         auto_offset_reset = "earliest",
-    #         enable_auto_commit = False,
-    #     )
-    #     partitions = consumer.partitions_for_topic(kafka_topic)
+    try:
+        consumer = KafkaConsumer(
+            bootstrap_servers = "kafka:9092",
+            consumer_timeout_ms = 5000,
+            auto_offset_reset = "earliest",
+            enable_auto_commit = False,
+        )
+        partitions = consumer.partitions_for_topic(kafka_topic)
 
-    #     if not partitions:
-    #         raise ValueError(
-    #             f"Kafka topic '{kafka_topic}' does not exist or has not partitions."
-    #         )
-    #     print(
-    #         f"Kafka topic '{kafka_topic}' is readable with partitions: "
-    #         f"{sorted(partitions)}"
-    #     )
-    # finally:
-    #     consumer.close()
+        # if not partitions:
+        #     raise ValueError(
+        #         f"Kafka topic '{kafka_topic}' does not exist or has not partitions."
+        #     )
+        # print(
+        #     f"Kafka topic '{kafka_topic}' is readable with partitions: "
+        #     f"{sorted(partitions)}"
+        # )
+    except Exception as e:
+        print(f"    [ERROR] {e}")
+        raise ValueError(
+            f"Kafka topic '{kafka_topic}' does not exist or has not partitions."
+        )
+    finally:
+        consumer.close()
 
 
 
@@ -62,6 +66,7 @@ def check_raw_data_exists(**context):
 
 
 
+
 # Default arguments for DAG setup
 default_args = {
         "owner" : "human_behavior_team",
@@ -69,13 +74,6 @@ default_args = {
         "retries" : 3,
         "retry_delay": timedelta(minutes=5),
     }
-
-
-
-
-
-
-
 
 
 
@@ -102,20 +100,17 @@ with DAG(
 
     run_streaming_job = BashOperator(
         task_id="run_streaming_job",
-        bash_command=(
-            f"spark-submit"
-            f"--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1 "
-            f"opt/airflow /spark/stream_consumer.py"
-        )#,
-        # env={
-        #     **BASE_TASK_ENV,
-        #     "CHECKPOINT_DIR": str("opt/airflow" / "data" / "checkpoints" / "stream_consumer"),
-        #     "TRIGGER_ONCE": "false",
-        #     "TRIGGER_PROCESSING_TIME": "10 seconds",
-        #     "STREAM_RUN_SECONDS": "300",
-        #     "MAX_FILES_PER_TRIGGER": "1",
-        # },
+        bash_command="""spark-submit \
+                            --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 \
+                            /opt/airflow/spark/stream_consumer.py \
+                            --bootstrap-servers kafka:9092"""
+        
     )
+
+    # run_consumer_task = PythonOperator(
+    #     task_id = "run_consumer",
+    #     python_callable=call_stream
+    # )
 
     wait_for_raw_data = PythonOperator(
         task_id = "wait_for_raw_data",

@@ -12,10 +12,18 @@ from pyspark.sql.types import (
 
 load_dotenv()
 
-kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
-raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
-checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
+# kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
+# kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
+# raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
+# checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
+# trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
+# trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
+# stream_run_seconds = int(os.getenv("STREAM_RUN_SECONDS", "300"))
+
+kafka_bootstrap_servers = "kafka:9092"
+kafka_topic = "stackexchange-events"
+raw_parquet_dir = "opt/airflow/data/raw"
+checkpoint_dir = "data/checkpoints/stream_consumer"
 trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
 trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
 stream_run_seconds = int(os.getenv("STREAM_RUN_SECONDS", "300"))
@@ -51,7 +59,7 @@ def build_spark(app_name: str = "StreamConsumer") -> SparkSession:
         .appName(app_name)
         .config(
             "spark.jars.packages",
-            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0"
         )
         .getOrCreate()
     )
@@ -76,53 +84,57 @@ def transform(df: DataFrame) -> DataFrame:
 
 
 def main() -> None:
-    ensure_dir(raw_parquet_dir)
-    ensure_dir(checkpoint_dir)
-
     spark = build_spark()
+    try:
+        ensure_dir(raw_parquet_dir)
+        ensure_dir(checkpoint_dir)
 
-    kafka_df = (
-        spark.readStream
-        .format("kafka")
-        .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
-        .option("subscribe", kafka_topic)
-        .option("startingOffsets", "earliest")
-        .load()
-    )
+        
 
-    parsed_df = (
-        kafka_df
-        .selectExpr("CAST(value AS STRING)")
-        .select(from_json(col("value"), event_schema).alias("data"))
-        .select("data.*")
-    )
-
-    out_df = transform(parsed_df)
-
-    writer = (
-        out_df.writeStream
-        .format("parquet")
-        .outputMode("append")
-        .option("path", raw_parquet_dir)
-        .option("checkpointLocation", checkpoint_dir)
-        .partitionBy("event_date")
-    )
-
-    if trigger_once:
-        print("Starting consumer in trigger-once mode...")
-        query = writer.trigger(once=True).start()
-        query.awaitTermination()
-    else:
-        print(
-            f"Starting consumer in processing-time mode every "
-            f"{trigger_processing_time} for up to {stream_run_seconds} seconds..."
+        kafka_df = (
+            spark.readStream
+            .format("kafka")
+            .option("kafka.bootstrap.servers", kafka_bootstrap_servers)
+            .option("subscribe", kafka_topic)
+            .option("startingOffsets", "earliest")
+            .load()
         )
-        query = writer.trigger(processingTime = trigger_processing_time).start()
-        query.awaitTermination(stream_run_seconds)
 
-        if query.isActive:
-            print("Stopping streaming query after timeout...")
-            query.stop()
+        parsed_df = (
+            kafka_df
+            .selectExpr("CAST(value AS STRING)")
+            .select(from_json(col("value"), event_schema).alias("data"))
+            .select("data.*")
+        )
+
+        out_df = transform(parsed_df)
+
+        writer = (
+            out_df.writeStream
+            .format("parquet")
+            .outputMode("append")
+            .option("path", raw_parquet_dir)
+            .option("checkpointLocation", checkpoint_dir)
+            .partitionBy("event_date")
+        )
+
+        if trigger_once:
+            print("Starting consumer in trigger-once mode...")
+            query = writer.trigger(once=True).start()
+            query.awaitTermination()
+        else:
+            print(
+                f"Starting consumer in processing-time mode every "
+                f"{trigger_processing_time} for up to {stream_run_seconds} seconds..."
+            )
+            query = writer.trigger(processingTime = trigger_processing_time).start()
+            query.awaitTermination(stream_run_seconds)
+
+            if query.isActive:
+                print("Stopping streaming query after timeout...")
+                query.stop()
+    except Exception as e:
+        print(f"    [ERROR] {e}")
 
     spark.stop()
 
