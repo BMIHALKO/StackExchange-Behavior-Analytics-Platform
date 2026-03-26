@@ -18,7 +18,7 @@ site = os.getenv("STACKEXCHANGE_SITE", "stackoverflow")
 pagesize = int(os.getenv("STACKEXCHANGE_PAGESIZE", "100"))
 max_pages = int(os.getenv("STACKEXCHANGE_MAX_PAGES", "20"))
 
-kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094")
 kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
 
 run_forever = os.getenv("RUN_FOREVER", "false").lower() in ("1", "true", "yes")
