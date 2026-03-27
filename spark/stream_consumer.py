@@ -51,7 +51,7 @@ def build_spark(app_name: str = "StreamConsumer") -> SparkSession:
         .appName(app_name)
         .config(
             "spark.jars.packages",
-            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0"
         )
         .getOrCreate()
     )
