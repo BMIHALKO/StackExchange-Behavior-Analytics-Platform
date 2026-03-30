@@ -12,22 +12,13 @@ from pyspark.sql.types import (
 
 load_dotenv()
 
-# kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
-# kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
-# raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
-# checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
-# trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
-# trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
-# stream_run_seconds = int(os.getenv("STREAM_RUN_SECONDS", "300"))
-
-kafka_bootstrap_servers = "kafka:9092"
-kafka_topic = "stackexchange-events"
-raw_parquet_dir = "opt/airflow/data/raw"
-checkpoint_dir = "data/checkpoints/stream_consumer"
+kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
+raw_parquet_dir = os.getenv("RAW_PARQUET_DIR", "data/raw")
+checkpoint_dir = os.getenv("CHECKPOINT_DIR", "data/checkpoints/stream_consumer")
 trigger_once = os.getenv("TRIGGER_ONCE", "true").lower() in ("1", "true", "yes")
 trigger_processing_time = os.getenv("TRIGGER_PROCESSING_TIME", "10 seconds")
 stream_run_seconds = int(os.getenv("STREAM_RUN_SECONDS", "300"))
-
 
 event_schema = StructType([
     StructField("event_id", StringType(), False),

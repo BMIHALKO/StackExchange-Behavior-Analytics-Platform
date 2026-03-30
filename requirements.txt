@@ -102,7 +102,7 @@ prison==0.2.1
 propcache==0.4.1
 protobuf==5.29.6
 psutil==7.2.2
-py4j==0.10.9.9
+py4j==0.10.9.7
 pycparser==3.0
 Pygments==2.19.2
 PyJWT==2.11.0

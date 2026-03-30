@@ -2,6 +2,7 @@
 .venv/
 venv/
 env/
+proje-venv
 
 # Environment variables / secrets
 .env
