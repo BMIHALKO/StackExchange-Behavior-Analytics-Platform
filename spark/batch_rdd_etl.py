@@ -14,7 +14,6 @@ def build_spark():
     spark = (
         SparkSession.builder
         .appName("BatchRDDETL")
-        .master("local[*]")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("WARN")
