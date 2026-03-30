@@ -84,28 +84,28 @@ STACKEXCHANGE_API_KEY=your_api_key_here
 STACKEXCHANGE_SITE=stackoverflow
 STACKEXCHANGE_PAGESIZE=100
 STACKEXCHANGE_MAX_PAGES=20
-MAX_CYCLES=3
+MAX_CYCLES=15
 POLL_INTERVAL=3
 RUN_FOREVER=false
 
-LANDING_DIR=data/landing
-CHECKPOINT_DIR=data/checkpoints/stream_consumer
+LANDING_DIR=/opt/airflow/data/landing
+CHECKPOINT_DIR=/opt/airflow/data/checkpoints/stream_consumer
 MAX_FILES_PER_TRIGGER=1
-STREAM_RUN_SECONDS=300
+STREAM_RUN_SECONDS=30
 TRIGGER_ONCE=false
 
-KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_BOOTSTRAP_SERVERS=localhost:9094
 KAFKA_TOPIC=stackexchange-events
 
-PROJECT_ROOT=/home/bmihalko/projects/StackExchange-Behavior-Analytics-Platform
-RAW_PARQUET_DIR=/home/bmihalko/projects/StackExchange-Behavior-Analytics-Platform/data/raw
-TRANSFORMED_DIR=/home/bmihalko/projects/StackExchange-Behavior-Analytics-Platform/data/transformed
+PROJECT_ROOT=/opt/airflow
+RAW_PARQUET_DIR=/opt/airflow/data/raw
+TRANSFORMED_DIR=/opt/airflow/data/transformed
 
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-SPARK_HOME=/home/bmihalko/spark
+SPARK_HOME=/opt/spark
 PYSPARK_PYTHON=python3
-
 SPARK_SUBMIT_BIN=spark-submit
+
+FERNET_KEY=your_fernet_key_here
 ```
 
 ---
