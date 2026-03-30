@@ -13,7 +13,7 @@ from pyspark.sql.functions import (
 from pyspark.sql.window import Window
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(file).resolve().parents[1]
 RAW_PATH = PROJECT_ROOT / "data" / "raw"
 OUTPUT_PATH = PROJECT_ROOT / "data" / "transformed"
 

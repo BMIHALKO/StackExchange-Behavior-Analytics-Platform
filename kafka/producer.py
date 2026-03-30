@@ -18,7 +18,7 @@ site = os.getenv("STACKEXCHANGE_SITE", "stackoverflow")
 pagesize = int(os.getenv("STACKEXCHANGE_PAGESIZE", "100"))
 max_pages = int(os.getenv("STACKEXCHANGE_MAX_PAGES", "20"))
 
-kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9094")
 kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
 
 run_forever = os.getenv("RUN_FOREVER", "false").lower() in ("1", "true", "yes")
@@ -116,7 +116,7 @@ def publish_one_cycle(producer: KafkaProducer) -> tuple[int, dict | None]:
 
 def main() -> None:
     producer = KafkaProducer(
-        bootstrap_servers = kafka_bootstrap_servers,
+        bootstrap_servers = "localhost:9094",
         value_serializer = lambda v: json.dumps(v).encode("utf-8"),
         key_serializer = lambda k: k.encode("utf-8") if k is not None else None,
     )
