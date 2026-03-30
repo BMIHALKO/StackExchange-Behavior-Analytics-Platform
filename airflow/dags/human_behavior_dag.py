@@ -33,7 +33,7 @@ kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 kafka_topic = os.getenv("KAFKA_TOPIC", "stackexchange-events")
 
 JAVA_HOME = os.getenv("JAVA_HOME", "/usr/lib/jvm/java-17-openjdk-amd64")
-SPARK_HOME = os.getenv("SPARK_HOME", "/home/bmihalko/spark")
+SPARK_HOME = os.getenv("SPARK_HOME", "/opt/spark")
 PYSPARK_PYTHON = os.getenv("PYSPARK_PYTHON", "python3")
 
 BASE_TASK_ENV = {
@@ -45,7 +45,7 @@ BASE_TASK_ENV = {
     "TRANSFORMED_DIR": str(TRANSFORMED_DIR),
     "KAFKA_BOOTSTRAP_SERVERS": kafka_bootstrap_servers,
     "KAFKA_TOPIC": kafka_topic,
-    "PATH": f"{PROJECT_ROOT / '.venv' / 'bin'}:{SPARK_HOME}/bin:/usr/bin:/bin",
+    "PATH": f"{SPARK_HOME}/bin:/home/airflow/.local/bin:/usr/local/bin:/usr/bin:/bin",
 }
 
 
@@ -72,13 +72,14 @@ def check_kafka_topic() -> None:
         consumer.close()
 
 def check_raw_data_exists(**context):
-    run_date = context["ds"]
-    raw_partition = RAW_DATA_DIR / f"event_date={run_date}"
+    partitions = sorted(RAW_DATA_DIR.glob("event_date=*"))
 
-    if not raw_partition.exists():
-        raise FileNotFoundError(f"Raw data folder not found: {raw_partition}")
+    if not partitions:
+        raise FileNotFoundError(f"No raw event_date partitions found in: {RAW_DATA_DIR}")
 
-    print(f"Raw data found: {raw_partition}")
+    print("Raw data partitions found:")
+    for p in partitions[-5:]:
+        print(f" - {p}")
 
 
 def validate_output():
@@ -130,7 +131,7 @@ with DAG(
         bash_command=(
             f"cd {PROJECT_ROOT} && "
             f"{SPARK_SUBMIT_BIN} "
-            f"--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1 "
+            f"--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 "
             f"{PROJECT_ROOT / 'spark' / 'stream_consumer.py'}"
         ),
         env={
@@ -138,7 +139,7 @@ with DAG(
             "CHECKPOINT_DIR": str(PROJECT_ROOT / "data" / "checkpoints" / "stream_consumer"),
             "TRIGGER_ONCE": "false",
             "TRIGGER_PROCESSING_TIME": "10 seconds",
-            "STREAM_RUN_SECONDS": "300",
+            "STREAM_RUN_SECONDS": "30",
             "MAX_FILES_PER_TRIGGER": "1",
         },
     )

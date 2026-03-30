@@ -203,10 +203,10 @@ services:
       SPARK_MASTER_URL: spark://spark-master:7077
       PYTHONPATH: /opt/airflow
     volumes:
-      - ./demo:/opt/airflow/data
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./demo:/opt/airflow/demo
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
       - ./spark:/opt/airflow/spark
     env_file:
       - .env
@@ -231,8 +231,6 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     container_name: pipeline-airflow-scheduler
-    # Run as root to match Spark container permissions for shared volume access
-    user: root
     command: scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -245,11 +243,10 @@ services:
       SPARK_MASTER_URL: spark://spark-master:7077
       PYTHONPATH: /opt/airflow
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./demo:/opt/airflow/demo
-      - ./logs:/opt/airflow/logs
-      - ./demo:/opt/airflow/data
-      # Docker socket for running docker exec commands (spark-submit)
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
       - /var/run/docker.sock:/var/run/docker.sock
       - ./spark:/opt/airflow/spark
     env_file:
