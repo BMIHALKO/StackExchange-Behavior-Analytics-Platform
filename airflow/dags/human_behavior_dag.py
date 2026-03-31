@@ -10,6 +10,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
+from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
 
 load_dotenv()
 
@@ -99,6 +100,26 @@ def validate_output():
 
     print("Output validation passed.")
 
+def send_records_to_snowflake(**context):
+    # Instantiate the hook with the connection ID defined in the Airflow UI
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    staging_query = f"PUT 'file://{RAW_DATA_DIR}/*/*.parquet' @RAW_EVENT_STAGE AUTO_COMPRESS=TRUE;"
+    
+    # print(f"Uploading files from {RAW_DATA_DIR} to {"RAW_EVENT_STAGE"}...")
+    hook.run(staging_query, autocommit=True)
+
+def send_to_table():
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+
+    query = """COPY INTO RAW_EVENT_TABLE
+                FROM @RAW_EVENT_STAGE
+                FILE_FORMAT = (TYPE = 'PARQUET')
+                MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
+                PURGE = TRUE;"""
+    hook.run(query, autocommit=True)
+    print("Success")
+
+
 
 default_args = {
     "owner": "data-engineer",
@@ -149,33 +170,45 @@ with DAG(
         python_callable = check_raw_data_exists,
     )
 
-    run_rdd_etl = BashOperator(
-        task_id="run_rdd_etl",
-        bash_command=(
-            f"cd {PROJECT_ROOT} && "
-            f"{SPARK_SUBMIT_BIN} {PROJECT_ROOT / 'spark' / 'batch_rdd_etl.py'}"
-        ),
-        env={
-            **BASE_TASK_ENV,
-        },
-    )
+    # run_rdd_etl = BashOperator(
+    #     task_id="run_rdd_etl",
+    #     bash_command=(
+    #         f"cd {PROJECT_ROOT} && "
+    #         f"{SPARK_SUBMIT_BIN} {PROJECT_ROOT / 'spark' / 'batch_rdd_etl.py'}"
+    #     ),
+    #     env={
+    #         **BASE_TASK_ENV,
+    #     },
+    # )
 
-    run_df_etl = BashOperator(
-        task_id="run_df_etl",
-        bash_command=(
-            f"cd {PROJECT_ROOT} && "
-            f"{SPARK_SUBMIT_BIN} {PROJECT_ROOT / 'spark' / 'batch_df_etl.py'}"
-        ),
-        env={
-            **BASE_TASK_ENV,
-        },
-    )
+    # run_df_etl = BashOperator(
+    #     task_id="run_df_etl",
+    #     bash_command=(
+    #         f"cd {PROJECT_ROOT} && "
+    #         f"{SPARK_SUBMIT_BIN} {PROJECT_ROOT / 'spark' / 'batch_df_etl.py'}"
+    #     ),
+    #     env={
+    #         **BASE_TASK_ENV,
+    #     },
+    # )
 
     validate_output_task = PythonOperator(
         task_id="validate_output",
         python_callable=validate_output,
     )
 
+    send_to_snowflake = PythonOperator(
+        task_id="send_data_to_snowflake",
+        python_callable=send_records_to_snowflake
+    )
+
+    stage_to_table = PythonOperator(
+        task_id="stage_to_table",
+        python_callable=send_to_table
+    )
+
     end = EmptyOperator(task_id="end")
 
-    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
+    # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
+
+    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> validate_output_task >> end
