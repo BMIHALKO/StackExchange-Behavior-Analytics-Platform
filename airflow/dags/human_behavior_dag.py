@@ -117,7 +117,19 @@ def send_to_table():
                 MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
                 PURGE = TRUE;"""
     hook.run(query, autocommit=True)
+
+    dedupe_query = """INSERT OVERWRITE INTO RAW_EVENT_TABLE
+                    SELECT DISTINCT *
+                    FROM RAW_EVENT_TABLE;"""
+    hook.run(dedupe_query, autocommit=True)
+
     print("Success")
+
+#This function might be used for sending data from the bronze layer to the silver layer
+def bronze_to_silver():
+    # hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    pass
+
 
 
 
@@ -205,6 +217,11 @@ with DAG(
     stage_to_table = PythonOperator(
         task_id="stage_to_table",
         python_callable=send_to_table
+    )
+
+    bronze_to_silver = PythonOperator(
+        task_id="bronze_to_silver",
+        python_callable=bronze_to_silver
     )
 
     end = EmptyOperator(task_id="end")
