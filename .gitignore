@@ -2,7 +2,7 @@
 .venv/
 venv/
 env/
-proje-venv
+profiles.yml
 
 # Environment variables / secrets
 .env
