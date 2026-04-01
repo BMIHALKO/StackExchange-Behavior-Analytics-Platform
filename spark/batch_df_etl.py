@@ -52,9 +52,9 @@ def main():
         .agg(count("*").alias("event_count"))
     )
 
-    events_by_type.write.mode("overwrite").parquet(
-        str(OUTPUT_PATH / "events_by_type_daily")
-    )
+    events_by_type.write.mode("overwrite") \
+        .option("header", "true") \
+        .csv(str(OUTPUT_PATH / "events_by_type_daily"))
 
     # --------------------------------
     # 2. top questions by score
@@ -74,9 +74,9 @@ def main():
         )
     )
 
-    top_questions.write.mode("overwrite").parquet(
-        str(OUTPUT_PATH / "top_questions_daily")
-    )
+    top_questions.write.mode("overwrite") \
+        .option("header", "true") \
+        .csv(str(OUTPUT_PATH / "top_questions_daily"))
 
     # --------------------------------
     # 3. answered vs unanswered
@@ -91,9 +91,9 @@ def main():
         )
     )
 
-    answered_rate.write.mode("overwrite").parquet(
-        str(OUTPUT_PATH / "answered_rate_daily")
-    )
+    answered_rate.write.mode("overwrite") \
+        .option("header", "true") \
+        .csv(str(OUTPUT_PATH / "answered_rate_daily"))
 
     # --------------------------------
     # 4. region distribution
@@ -104,9 +104,9 @@ def main():
         .agg(count("*").alias("event_count"))
     )
 
-    region_dist.write.mode("overwrite").parquet(
-        str(OUTPUT_PATH / "region_distribution")
-    )
+    region_dist.write.mode("overwrite") \
+        .option("header", "true") \
+        .csv(str(OUTPUT_PATH / "region_distribution"))
 
     print("Batch ETL finished successfully")
 

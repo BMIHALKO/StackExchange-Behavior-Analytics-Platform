@@ -103,8 +103,8 @@ def validate_output():
 
 def send_records_to_snowflake(**context):
     # Instantiate the hook with the connection ID defined in the Airflow UI
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
-    staging_query = f"PUT 'file://{RAW_DATA_DIR}/*/*.parquet' @STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_STAGE AUTO_COMPRESS=TRUE;"
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+    staging_query = f"PUT 'file://{RAW_DATA_DIR}/*/*.parquet' @RAW_EVENT_STAGE AUTO_COMPRESS=TRUE;"
     
     # print(f"Uploading files from {RAW_DATA_DIR} to {"RAW_EVENT_STAGE"}...")
     hook.run(staging_query, autocommit=True)
@@ -112,20 +112,16 @@ def send_records_to_snowflake(**context):
 def send_to_table():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
 
-    query = """
-    COPY INTO STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_TABLE
-    FROM @STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_STAGE
-    FILE_FORMAT = (TYPE = 'PARQUET')
-    MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
-    PURGE = TRUE;
-    """
+    query = """COPY INTO RAW_EVENT_TABLE
+                FROM @RAW_EVENT_STAGE
+                FILE_FORMAT = (TYPE = 'PARQUET')
+                MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
+                PURGE = TRUE;"""
     hook.run(query, autocommit=True)
 
-    dedupe_query = """
-    INSERT OVERWRITE INTO STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_TABLE
-    SELECT DISTINCT *
-    FROM STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_TABLE;
-    """
+    dedupe_query = """INSERT OVERWRITE INTO RAW_EVENT_TABLE
+                    SELECT DISTINCT *
+                    FROM RAW_EVENT_TABLE;"""
     hook.run(dedupe_query, autocommit=True)
 
     print("Success")
@@ -134,25 +130,39 @@ def send_to_table():
 def move_to_silver():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
 
-    query = """
-    CREATE OR REPLACE TABLE STACKEXCHANGE_BEHAVIOR_DB.SILVER.RAW_EVENT_TABLE AS
-    SELECT
-        EVENT_ID,
-        EVENT_TYPE,
-        TIMESTAMP AS TIME_POSTED,
-        USER_ID,
-        SOURCE AS API_USED,
-        PAYLOAD:question_id::VARCHAR AS QUESTION_ID,
-        PAYLOAD:creation_date::VARCHAR AS CREATION_DATE,
-        PAYLOAD:title::VARCHAR AS TITLE,
-        PAYLOAD:score::INT AS SCORE,
-        PAYLOAD:answer_count::INT AS ANSWER_COUNT,
-        PAYLOAD:is_answered::BOOLEAN AS IS_ANSWERED,
-        PAYLOAD:link::VARCHAR AS LINK
-    FROM STACKEXCHANGE_BEHAVIOR_DB.BRONZE.RAW_EVENT_TABLE;
-    """
-    hook.run(query, autocommit=True)
+    temp_query = f"""CREATE OR REPLACE TEMPORARY VIEW STACKEXPROJ.BRONZE.FLATTENED_EVENT_VIEW AS
+                    SELECT
+                        EVENT_ID,
+                        EVENT_TYPE,
+                        TIMESTAMP AS TIME_POSTED,
+                        USER_ID,
+                        SOURCE AS API_USED,
+                        payload:question_id::VARCHAR AS QUESTION_ID,
+                        payload:creation_date::VARCHAR AS CREATION_DATE,
+                        payload:title::VARCHAR AS TITLE,
+                        payload:score::INT AS SCORE,
+                        payload:answer_count::INT AS ANSWER_COUNT,
+                        payload:is_answered::BOOLEAN AS IS_ANSWERED,
+                        payload:link::VARCHAR AS LINK
+                    FROM RAW_EVENT_TABLE;"""
+    
+
+    
+    query = f"""CREATE OR REPLACE TABLE STACKEXPROJ.SILVER.FLATTENED_EVENT_TABLE AS
+                    SELECT * FROM STACKEXPROJ.BRONZE.FLATTENED_EVENT_VIEW;"""
+
+    hook.run([temp_query, query], autocommit=True)
     print("Success")
+
+
+def move_to_gold():
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+
+    answer_rate_query = f"""CREATE OR REPLACE TEMPORARY VIEW SILVER.ANSWER_RATE_DAILY AS
+                            SELECT 
+                                TIME_POSTED,
+                                ,
+                                """
 
 def data_cleansing():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
@@ -251,6 +261,11 @@ with DAG(
         python_callable=move_to_silver
     )
 
+    silver_to_gold = PythonOperator(
+        task_id="silver-to-gold",
+        python_callable=move_to_gold
+    )
+
 
 
 
@@ -258,7 +273,7 @@ with DAG(
 
     # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
 
-    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> validate_output_task >> end
+    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> [run_df_etl, run_rdd_etl] >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> validate_output_task >> end
 
     # start >> bronze_to_silver >> end
 
