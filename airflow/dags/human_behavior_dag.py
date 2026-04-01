@@ -154,16 +154,6 @@ def move_to_silver():
     hook.run([temp_query, query], autocommit=True)
     print("Success")
 
-
-def move_to_gold():
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
-
-    answer_rate_query = f"""CREATE OR REPLACE TEMPORARY VIEW SILVER.ANSWER_RATE_DAILY AS
-                            SELECT 
-                                TIME_POSTED,
-                                ,
-                                """
-
 def data_cleansing():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
@@ -261,11 +251,6 @@ with DAG(
         python_callable=move_to_silver
     )
 
-    silver_to_gold = PythonOperator(
-        task_id="silver-to-gold",
-        python_callable=move_to_gold
-    )
-
 
 
 
@@ -273,7 +258,7 @@ with DAG(
 
     # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
 
-    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> [run_df_etl, run_rdd_etl] >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> validate_output_task >> end
+    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> validate_output_task >> end
 
     # start >> bronze_to_silver >> end
 
