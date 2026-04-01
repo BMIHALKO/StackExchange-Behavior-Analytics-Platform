@@ -110,7 +110,7 @@ def send_records_to_snowflake(**context):
     hook.run(staging_query, autocommit=True)
 
 def send_to_table():
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
     query = """COPY INTO RAW_EVENT_TABLE
                 FROM @RAW_EVENT_STAGE
@@ -128,7 +128,7 @@ def send_to_table():
 
 #This function might be used for sending data from the bronze layer to the silver layer
 def move_to_silver():
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
     temp_query = f"""CREATE OR REPLACE TEMPORARY VIEW STACKEXPROJ.BRONZE.FLATTENED_EVENT_VIEW AS
                     SELECT
