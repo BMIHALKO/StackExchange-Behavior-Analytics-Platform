@@ -231,6 +231,7 @@ services:
       context: .
       dockerfile: Dockerfile.airflow
     container_name: pipeline-airflow-scheduler
+    user: root
     command: scheduler
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor

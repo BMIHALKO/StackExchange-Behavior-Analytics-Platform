@@ -11,6 +11,7 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.snowflake.hooks.snowflake import SnowflakeHook
+from airflow.providers.docker.operators.docker import DockerOperator
 
 load_dotenv()
 
@@ -102,14 +103,14 @@ def validate_output():
 
 def send_records_to_snowflake(**context):
     # Instantiate the hook with the connection ID defined in the Airflow UI
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
     staging_query = f"PUT 'file://{RAW_DATA_DIR}/*/*.parquet' @RAW_EVENT_STAGE AUTO_COMPRESS=TRUE;"
     
     # print(f"Uploading files from {RAW_DATA_DIR} to {"RAW_EVENT_STAGE"}...")
     hook.run(staging_query, autocommit=True)
 
 def send_to_table():
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
     query = """COPY INTO RAW_EVENT_TABLE
                 FROM @RAW_EVENT_STAGE
@@ -126,9 +127,13 @@ def send_to_table():
     print("Success")
 
 #This function might be used for sending data from the bronze layer to the silver layer
-def bronze_to_silver():
-    # hook = SnowflakeHook(snowflake_conn_id="snowflake_conn1")
-    pass
+def move_to_silver():
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+    
+    query = f"""CREATE TABLE STACKEXPROJ.SILVER.RAW_EVENT_TABLE CLONE STACKEXPROJ.BRONZE.RAW_EVENT_TABLE;"""
+
+    hook.run(query, autocommit=True)
+    print("Success")
 
 
 
@@ -154,33 +159,33 @@ with DAG(
 
     start = EmptyOperator(task_id="start")
 
-    check_kafka_task = PythonOperator(
-        task_id = "check_kafka_topic",
-        python_callable = check_kafka_topic
-    )
+    # check_kafka_task = PythonOperator(
+    #     task_id = "check_kafka_topic",
+    #     python_callable = check_kafka_topic
+    # )
 
-    run_streaming_job = BashOperator(
-        task_id="run_streaming_job",
-        bash_command=(
-            f"cd {PROJECT_ROOT} && "
-            f"{SPARK_SUBMIT_BIN} "
-            f"--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 "
-            f"{PROJECT_ROOT / 'spark' / 'stream_consumer.py'}"
-        ),
-        env={
-            **BASE_TASK_ENV,
-            "CHECKPOINT_DIR": str(PROJECT_ROOT / "data" / "checkpoints" / "stream_consumer"),
-            "TRIGGER_ONCE": "false",
-            "TRIGGER_PROCESSING_TIME": "10 seconds",
-            "STREAM_RUN_SECONDS": "30",
-            "MAX_FILES_PER_TRIGGER": "1",
-        },
-    )
+    # run_streaming_job = BashOperator(
+    #     task_id="run_streaming_job",
+    #     bash_command=(
+    #         f"cd {PROJECT_ROOT} && "
+    #         f"{SPARK_SUBMIT_BIN} "
+    #         f"--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0 "
+    #         f"{PROJECT_ROOT / 'spark' / 'stream_consumer.py'}"
+    #     ),
+    #     env={
+    #         **BASE_TASK_ENV,
+    #         "CHECKPOINT_DIR": str(PROJECT_ROOT / "data" / "checkpoints" / "stream_consumer"),
+    #         "TRIGGER_ONCE": "false",
+    #         "TRIGGER_PROCESSING_TIME": "10 seconds",
+    #         "STREAM_RUN_SECONDS": "30",
+    #         "MAX_FILES_PER_TRIGGER": "1",
+    #     },
+    # )
 
-    wait_for_raw_data = PythonOperator(
-        task_id = "wait_for_raw_data",
-        python_callable = check_raw_data_exists,
-    )
+    # wait_for_raw_data = PythonOperator(
+    #     task_id = "wait_for_raw_data",
+    #     python_callable = check_raw_data_exists,
+    # )
 
     # run_rdd_etl = BashOperator(
     #     task_id="run_rdd_etl",
@@ -204,28 +209,34 @@ with DAG(
     #     },
     # )
 
-    validate_output_task = PythonOperator(
-        task_id="validate_output",
-        python_callable=validate_output,
-    )
+    # validate_output_task = PythonOperator(
+    #     task_id="validate_output",
+    #     python_callable=validate_output,
+    # )
 
-    send_to_snowflake = PythonOperator(
-        task_id="send_data_to_snowflake",
-        python_callable=send_records_to_snowflake
-    )
+    # send_to_snowflake = PythonOperator(
+    #     task_id="send_data_to_snowflake",
+    #     python_callable=send_records_to_snowflake
+    # )
 
-    stage_to_table = PythonOperator(
-        task_id="stage_to_table",
-        python_callable=send_to_table
-    )
+    # stage_to_table = PythonOperator(
+    #     task_id="stage_to_table",
+    #     python_callable=send_to_table
+    # )
 
     bronze_to_silver = PythonOperator(
         task_id="bronze_to_silver",
-        python_callable=bronze_to_silver
+        python_callable=move_to_silver
     )
+
+
+
 
     end = EmptyOperator(task_id="end")
 
     # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
 
-    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> validate_output_task >> end
+    # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> validate_output_task >> end
+
+    start >> bronze_to_silver >> end
+
