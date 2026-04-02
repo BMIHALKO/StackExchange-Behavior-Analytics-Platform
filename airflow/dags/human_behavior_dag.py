@@ -104,10 +104,11 @@ def validate_output():
 def send_records_to_snowflake(**context):
     # Instantiate the hook with the connection ID defined in the Airflow UI
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+    bronze_check="CREATE SCHEMA IF NOT EXISTS BRONZE;"
     staging_query = f"PUT 'file://{RAW_DATA_DIR}/*/*.parquet' @BRONZE.RAW_EVENT_STAGE AUTO_COMPRESS=TRUE;"
     
     # print(f"Uploading files from {RAW_DATA_DIR} to {"RAW_EVENT_STAGE"}...")
-    hook.run(staging_query, autocommit=True)
+    hook.run([bronze_check, staging_query], autocommit=True)
 
 def send_to_table():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
@@ -134,6 +135,8 @@ def send_to_table():
 def move_to_silver():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
+    silver_check="CREATE SCHEMA IF NOT EXISTS SILVER;"
+
     query = """
     CREATE OR REPLACE TABLE SILVER.RAW_EVENT_TABLE AS
     SELECT
@@ -155,7 +158,7 @@ def move_to_silver():
 
 
 
-    hook.run(query, autocommit=True)
+    hook.run([silver_check, query], autocommit=True)
     print("Success")
 
 def data_cleansing():
@@ -179,6 +182,8 @@ def data_cleansing():
 
 def move_to_gold():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+
+    gold_check="CREATE SCHEMA IF NOT EXISTS GOLD;"
 
     answered_vs_unanswered_query = """CREATE OR REPLACE TABLE GOLD.ANSWER_RATE_DAILY AS
                                         SELECT 
@@ -207,7 +212,7 @@ def move_to_gold():
                                         FROM user_counts
                                         GROUP BY IS_REPEAT_USER;"""
 
-    hook.run([answered_vs_unanswered_query, returning_user_vs_onetime_user], autocommit=True)
+    hook.run([gold_check, answered_vs_unanswered_query, returning_user_vs_onetime_user], autocommit=True)
 
 
 
