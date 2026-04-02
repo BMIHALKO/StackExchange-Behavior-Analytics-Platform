@@ -152,8 +152,7 @@ def move_to_silver():
         PAYLOAD:answer_count::INT AS ANSWER_COUNT,
         PAYLOAD:is_answered::BOOLEAN AS IS_ANSWERED,
         PAYLOAD:link::VARCHAR AS LINK
-    FROM BRONZE.RAW_EVENT_TABLE;
-    """
+    FROM BRONZE.RAW_EVENT_TABLE;"""
     
 
 
@@ -164,19 +163,33 @@ def move_to_silver():
 def data_cleansing():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
-    clean_table_creation = """CREATE OR REPLACE TABLE SILVER.CLEANED_SILVER_TABLE AS
-                                WITH unique_questions AS (
-                                    SELECT 
-                                        *,
-                                        ROW_NUMBER() OVER (
-                                            PARTITION BY QUESTION_ID
-                                            ORDER BY DATE(TIME_POSTED) DESC
-                                        ) as row_num
-                                    FROM SILVER.RAW_EVENT_TABLE
-                                )
-                                SELECT * EXCLUDE row_num
-                                FROM unique_questions
-                                WHERE row_num = 1"""
+    clean_table_creation = """
+    CREATE OR REPLACE TABLE SILVER.CLEANED_SILVER_TABLE AS
+        WITH unique_questions AS (
+            SELECT 
+                *,
+                ROW_NUMBER() OVER (
+                    PARTITION BY QUESTION_ID
+                    ORDER BY DATE(TIME_POSTED) DESC -- Keeps the most recent entry
+                ) as row_num
+            FROM SILVER.RAW_EVENT_TABLE
+        )
+        SELECT --* EXCLUDE row_num
+            EVENT_ID,
+            EVENT_TYPE,
+            TO_TIMESTAMP_NTZ(TIME_POSTED) AS TIME_POSTED,
+            USER_ID,
+            API_USED,
+            QUESTION_ID,
+            CREATION_DATE,
+            TITLE,
+            SCORE,
+            ANSWER_COUNT,
+            IS_ANSWERED,
+            LINK
+        FROM unique_questions
+        WHERE row_num = 1
+    """
     hook.run(clean_table_creation, autocommit=True)
 
 
@@ -214,7 +227,40 @@ def move_to_gold():
 
     hook.run([gold_check, answered_vs_unanswered_query, returning_user_vs_onetime_user], autocommit=True)
 
+def star_schema_creation():
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
 
+    fact_table_query = """CREATE OR REPLACE TABLE GOLD.BEHAVIORAL_FACT_TABLE AS
+                            SELECT
+                                *
+                            FROM SILVER.CLEANED_SILVER_TABLE;
+
+                            SELECT * FROM GOLD.BEHAVIORAL_FACT_TABLE;
+
+                            CREATE OR REPLACE TABLE GOLD.USER_DIMENSION_TABLE AS
+                            SELECT
+                                DISTINCT USER_ID
+                            FROM GOLD.BEHAVIORAL_FACT_TABLE;"""
+    
+    question_dimension_table = """CREATE OR REPLACE TABLE GOLD.QUESTION_DIMENSION_TABLE AS
+                                    SELECT
+                                        QUESTION_ID,
+                                        TIME_POSTED,
+                                        TITLE,
+                                        SCORE,
+                                        ANSWER_COUNT,
+                                        IS_ANSWERED,
+                                        LINK
+                                    FROM GOLD.BEHAVIORAL_FACT_TABLE;"""
+    
+    user_dimension_table = """CREATE OR REPLACE TABLE GOLD.USER_DIMENSION_TABLE AS
+                                SELECT
+                                    DISTINCT USER_ID
+                                FROM GOLD.BEHAVIORAL_FACT_TABLE;"""
+    
+    hook.run(fact_table_query, autocommit=True)
+    hook.run(user_dimension_table, autocommit=True)
+    hook.run(question_dimension_table, autocommit=True)
 
 default_args = {
     "owner": "data-engineer",
@@ -317,12 +363,17 @@ with DAG(
         python_callable=move_to_gold
     )
 
+    star_schema_gen = PythonOperator(
+        task_id="star_schema_gen",
+        python_callable=star_schema_creation      
+    )
+
 
     end = EmptyOperator(task_id="end")
 
     # start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> run_rdd_etl >> run_df_etl >> validate_output_task >> end
 
-    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> silver_cleansing >> validate_output_task >> silver_to_gold >> end
+    start >> check_kafka_task >> run_streaming_job >> wait_for_raw_data >> send_to_snowflake >> stage_to_table >> bronze_to_silver >> silver_cleansing >> validate_output_task >> star_schema_gen >> silver_to_gold >> end
 
     # start >> bronze_to_silver >> end
 
