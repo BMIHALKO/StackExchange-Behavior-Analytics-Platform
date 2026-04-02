@@ -232,15 +232,8 @@ def star_schema_creation():
 
     fact_table_query = """CREATE OR REPLACE TABLE GOLD.BEHAVIORAL_FACT_TABLE AS
                             SELECT
-                                *
-                            FROM SILVER.CLEANED_SILVER_TABLE;
-
-                            SELECT * FROM GOLD.BEHAVIORAL_FACT_TABLE;
-
-                            CREATE OR REPLACE TABLE GOLD.USER_DIMENSION_TABLE AS
-                            SELECT
-                                DISTINCT USER_ID
-                            FROM GOLD.BEHAVIORAL_FACT_TABLE;"""
+                                * EXCLUDE CREATION_DATE
+                            FROM SILVER.CLEANED_SILVER_TABLE;"""
     
     question_dimension_table = """CREATE OR REPLACE TABLE GOLD.QUESTION_DIMENSION_TABLE AS
                                     SELECT
