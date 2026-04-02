@@ -224,8 +224,17 @@ def move_to_gold():
                                             COUNT(USER_ID) AS USER_COUNT
                                         FROM user_counts
                                         GROUP BY IS_REPEAT_USER;"""
+    
 
-    hook.run([gold_check, answered_vs_unanswered_query, returning_user_vs_onetime_user], autocommit=True)
+    score_distribution = """CREATE OR REPLACE TABLE GOLD.SCORE_DISTRIBUTIONS AS
+                                SELECT 
+                                    SCORE,
+                                    COUNT(SCORE) AS SCORE_COUNT
+                                FROM SILVER.CLEANED_SILVER_TABLE
+                                GROUP BY SCORE
+                                ORDER BY SCORE DESC;"""
+
+    hook.run([gold_check, answered_vs_unanswered_query, returning_user_vs_onetime_user, score_distribution], autocommit=True)
 
 def star_schema_creation():
     hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
