@@ -188,7 +188,26 @@ def move_to_gold():
                                             COUNT(CASE WHEN IS_ANSWERED = FALSE THEN 1 END) AS QUESTIONS_NOT_ANSWERED
                                         FROM SILVER.CLEANED_SILVER_TABLE
                                         GROUP BY DATE(TIME_POSTED);"""
-    hook.run(answered_vs_unanswered_query, autocommit=True)
+    
+    returning_user_vs_onetime_user = """CREATE OR REPLACE TABLE GOLD.RETURNING_VS_NEW_USER AS
+                                        WITH user_counts AS (
+                                            SELECT 
+                                                USER_ID,
+                                                -- Count how many times each specific user appears
+                                                CASE 
+                                                    WHEN COUNT(*) > 1 THEN 'Returning_user'
+                                                    ELSE 'One_time_user'
+                                                END AS IS_REPEAT_USER
+                                            FROM SILVER.CLEANED_SILVER_TABLE
+                                            GROUP BY USER_ID  -- This is the missing piece
+                                        )
+                                        SELECT 
+                                            IS_REPEAT_USER, 
+                                            COUNT(USER_ID) AS USER_COUNT
+                                        FROM user_counts
+                                        GROUP BY IS_REPEAT_USER;"""
+
+    hook.run([answered_vs_unanswered_query, returning_user_vs_onetime_user], autocommit=True)
 
 
 
