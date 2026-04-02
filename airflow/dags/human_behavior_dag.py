@@ -138,7 +138,33 @@ def move_to_silver():
     silver_check="CREATE SCHEMA IF NOT EXISTS SILVER;"
 
     query = """
-    CREATE OR REPLACE TABLE CLEANED_SILVER_TABLE AS
+    CREATE OR REPLACE TABLE SILVER.RAW_EVENT_TABLE AS
+    SELECT
+        EVENT_ID,
+        EVENT_TYPE,
+        TIMESTAMP AS TIME_POSTED,
+        USER_ID,
+        SOURCE AS API_USED,
+        PAYLOAD:question_id::VARCHAR AS QUESTION_ID,
+        PAYLOAD:creation_date::VARCHAR AS CREATION_DATE,
+        PAYLOAD:title::VARCHAR AS TITLE,
+        PAYLOAD:score::INT AS SCORE,
+        PAYLOAD:answer_count::INT AS ANSWER_COUNT,
+        PAYLOAD:is_answered::BOOLEAN AS IS_ANSWERED,
+        PAYLOAD:link::VARCHAR AS LINK
+    FROM BRONZE.RAW_EVENT_TABLE;"""
+    
+
+
+
+    hook.run([silver_check, query], autocommit=True)
+    print("Success")
+
+def data_cleansing():
+    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
+
+    clean_table_creation = """
+    CREATE OR REPLACE TABLE SILVER.CLEANED_SILVER_TABLE AS
         WITH unique_questions AS (
             SELECT 
                 *,
@@ -164,29 +190,6 @@ def move_to_silver():
         FROM unique_questions
         WHERE row_num = 1
     """
-    
-
-
-
-    hook.run([silver_check, query], autocommit=True)
-    print("Success")
-
-def data_cleansing():
-    hook = SnowflakeHook(snowflake_conn_id="snowflake_conn")
-
-    clean_table_creation = """CREATE OR REPLACE TABLE SILVER.CLEANED_SILVER_TABLE AS
-                                WITH unique_questions AS (
-                                    SELECT 
-                                        *,
-                                        ROW_NUMBER() OVER (
-                                            PARTITION BY QUESTION_ID
-                                            ORDER BY DATE(TIME_POSTED) DESC
-                                        ) as row_num
-                                    FROM SILVER.RAW_EVENT_TABLE
-                                )
-                                SELECT * EXCLUDE row_num
-                                FROM unique_questions
-                                WHERE row_num = 1"""
     hook.run(clean_table_creation, autocommit=True)
 
 
